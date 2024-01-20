@@ -23,6 +23,17 @@ export const createJob = mutation({
     },
 })
 
+export const connectJobs = mutation({
+    args: { from_id: v.id("job"), to_id: v.id("job") },
+    handler: async (ctx, args) => {
+        await ctx.db.patch(args.from_id, { next: args.to_id });
+        const to_job = await ctx.db.query("job").filter(q =>
+            q.eq(q.field("_id"), args.to_id)
+        ).first();
+        await ctx.db.patch(args.to_id, { remaining: to_job!.remaining + 1 });
+    }
+})
+
 export const get = query({
     args: {},
     handler: async (ctx) => {

@@ -16,11 +16,6 @@ import {
 import Draggable from "react-draggable";
 import Xarrow, { Xwrapper } from "react-xarrows";
 
-type Line = {
-    from: string;
-    to: string;
-}
-
 type Script = {
     id?: any;
     entry_point: string;
@@ -29,9 +24,15 @@ type Script = {
 }
 
 type Job = {
+    id?: any;
     component_id: string;
     script?: Script;
     engine_id: any;
+}
+
+type Line = {
+    from: Job;
+    to: Job;
 }
 
 
@@ -44,7 +45,7 @@ function WorkflowPage() {
     const [addLinkBtnText, setAddLinkBtnText] = useState("+ Link");
     const [addLinkBtnEnabled, setAddLinkBtnEnabled] = useState(true);
     const [selecting, setSelecting] = useState(""); // 'source' or 'destination'
-    const [source, setSource] = useState<string>("");
+    const [source, setSource] = useState<Job | null>(null);
     const [lines, setLines] = useState<Line[]>([]);
     const [openScript, setOpenScript] = useState(false);
     const [currentJob, setCurrentJob] = useState<Job | null>(null);    // currently editing job
@@ -57,27 +58,29 @@ function WorkflowPage() {
     const runWorkflow = useMutation(api.workflow.runWorkflow);
     const createScript = useMutation(api.script.createScript);
     const createJob = useMutation(api.job.createJob);
+    const connectJobs = useMutation(api.job.connectJobs);
 
     const handleAddEngine = () => {
         setOpenEngine(true);
         setSelectedEngine(null);
     };
-    const onSourceClick = (job: string) => {
+    const onSourceClick = (job: Job) => {
         console.log('selecting source');
         setSource(job);
         setAddLinkBtnText("Click on destination engine");
         setSelecting("destination");
     }
-    const onDestClick = (job: string) => {
+    const onDestClick = (job: Job) => {
         console.log('selecting dest');
         setAddLinkBtnEnabled(true);
         setAddLinkBtnText("+ Link");
+        if (source == null) return;
         const line = { from: source, to: job };
         setLines([...lines, line]);
         console.log(line)
         console.log(lines);
         setSelecting("");
-        setSource("");
+        setSource(null);
     }
     const handleClose = () => {
         setOpenEngine(false);
@@ -88,7 +91,7 @@ function WorkflowPage() {
         const newJob: Job = { component_id: selectedEngine + '_' + jobs.length, engine_id: selectedEngine };
         setJobs([...jobs, newJob]);
         const newBox = <Draggable onMouseDown={
-            () => { selecting === 'destination' ? onDestClick(newJob.component_id) : onSourceClick(newJob.component_id) }}>
+            () => { selecting === 'destination' ? onDestClick(newJob) : onSourceClick(newJob) }}>
             <div style={{ width: "100px", height: "100px", backgroundColor: "lightblue" }}>{newJob.component_id}</div>
         </Draggable>
         setBoxes([...boxes, newBox]);
@@ -140,11 +143,15 @@ function WorkflowPage() {
                         script_id: job.script!.id,
                         engine_id: job.engine_id,
                         workflow_id: workflowId,
-                    });
+                    }).then(id => job.id = id);
                 });
         });
 
-        // TODO Link jobs for each line and increase count
+        // Link jobs for each line and increase count
+        lines.forEach((line) => {
+            console.log(line);
+            connectJobs({ from_id: line.from.id, to_id: line.to.id });
+        })
 
         // TODO set status of all jobs to runnable after setting up next jobs
 
@@ -174,8 +181,8 @@ function WorkflowPage() {
             <div className="workspace">
                 {jobs.map((job) => <Draggable onMouseDown={
                     () => {
-                        if (selecting === 'source') { onSourceClick(job.component_id); }
-                        else if (selecting === 'destination') { onDestClick(job.component_id) };
+                        if (selecting === 'source') { onSourceClick(job); }
+                        else if (selecting === 'destination') { onDestClick(job) };
                     }}>
                     <div
                         onDoubleClick={() => handleOpenScript(job)}
@@ -186,7 +193,7 @@ function WorkflowPage() {
                 </Draggable>)}
                 <Xwrapper>
                     {lines.map((line, i) => (
-                        <Xarrow key={i} start={line.from} end={line.to} zIndex={100} />
+                        <Xarrow key={i} start={line.from.component_id} end={line.to.component_id} zIndex={100} />
                     ))}
                 </Xwrapper>
             </div>
