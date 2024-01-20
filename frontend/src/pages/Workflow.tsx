@@ -15,6 +15,8 @@ import {
 } from '@mui/material';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import Draggable from "react-draggable";
+import { toast } from 'react-toastify';
+import Xarrow, { Xwrapper, useXarrow } from "react-xarrows";
 
 
 type Engine = {
@@ -23,14 +25,33 @@ type Engine = {
     status: any;
 }
 
+// const boxStyle = { border: 'grey solid 2px', borderRadius: '10px', padding: '5px' };
+
+const DraggableBox = ({ id }) => {
+    const updateXarrow = useXarrow();
+    return (
+        <Draggable onDrag={updateXarrow} onStop={updateXarrow}>
+            <div id={id}>
+                {id}
+            </div>
+        </Draggable>
+    );
+};
+
 
 function WorkflowPage() {
     const [name, setName] = useState<string>("");
     const [open, setOpen] = useState(false);
     const [selectedEngine, setSelectedEngine] = useState<any>(null);
     const [jobs, setJobs] = useState<any[]>([]);
+    const [addLinkBtnText, setAddLinkBtnText] = useState("+ Link");
+    const [addLinkBtnEnabled, setAddLinkBtnEnabled] = useState(true);
+    const [isSelectingSource, setIsSelectingSource] = useState(false);
+    const [isSelectingDest, setIsSelectingDest] = useState(false);
+    const [sourceEngine, setSourceEngine] = useState(null);
+    const [destEngine, setDestEngine] = useState(null);
 
-    const handleClickOpen = () => {
+    const handleAddEngine = () => {
         setOpen(true);
         setSelectedEngine(null);
     };
@@ -43,6 +64,25 @@ function WorkflowPage() {
         const newJob = selectedEngine
         setJobs([...jobs, newJob]);
     };
+    const handleAddLink = () => {
+        console.log("hello")
+        // TODO handle from and to using states
+        setAddLinkBtnText("Click on source engine");
+        setAddLinkBtnEnabled(false);
+        setIsSelectingSource(true);
+    }
+    const onEngineClick = (event) => {
+        // TODO handle script
+        if (isSelectingSource) {
+            setSourceEngine(event.target);
+            setIsSelectingSource(false);
+            setIsSelectingDest(true);
+        } else if (isSelectingDest) {
+            setDestEngine(event.target);
+            setIsSelectingDest(false);
+            // TODO draw line
+        }
+    }
 
     return (
         <div className="workflow">
@@ -54,21 +94,28 @@ function WorkflowPage() {
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                 />
-                <Button
-                    variant="contained"
-                    onClick={handleClickOpen}
-                >
-                    +
-                </Button>
+                <div>
+                    <Button variant="contained" onClick={handleAddEngine}>
+                        + Engine
+                    </Button>
+                    <Button variant="contained" onClick={handleAddLink} disabled={!addLinkBtnEnabled}>
+                        {addLinkBtnText}
+                    </Button>
+                </div>
             </div>
             <div className="workspace">
-                {jobs.map((job, index) => (
-                    <Draggable key={index}>
+                <Xwrapper>
+                    <DraggableBox id={'elem1'} />
+                    <DraggableBox id={'elem2'} />
+                    <Xarrow start={'elem1'} end="elem2" />
+                </Xwrapper>
+                {/* {jobs.map((job, index) => (
+                    <DraggableBox id={index}>
                         <Button>
                             {job}
                         </Button>
-                    </Draggable>
-                ))}
+                    </DraggableBox>
+                ))} */}
             </div>
             <Button>
                 Execute
