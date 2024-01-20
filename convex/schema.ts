@@ -13,7 +13,8 @@ export default defineSchema({
     status: v.number(),
   }),
   script: defineTable({
-    _id: v.id("job"),
+    // _id: v.id("job"), // TODO @ngchisern is this suppose to be script?
+    _id: v.id("script"),
     entry_point: v.string(),
     arguments: v.array(v.any()),
     content: v.string(),

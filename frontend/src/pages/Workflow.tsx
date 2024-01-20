@@ -31,6 +31,7 @@ type Script = {
 type Job = {
     component_id: string;
     script?: Script;
+    engine_id: any;
 }
 
 
@@ -54,6 +55,8 @@ function WorkflowPage() {
     createWorkflow().then(id => { workflowId = id; console.log(workflowId); });
 
     const runWorkflow = useMutation(api.workflow.runWorkflow);
+    const createScript = useMutation(api.script.createScript);
+    const createJob = useMutation(api.job.createJob);
 
     const handleAddEngine = () => {
         setOpenEngine(true);
@@ -82,7 +85,7 @@ function WorkflowPage() {
         if (selectedEngine === null) {
             return;
         }
-        const newJob: Job = { component_id: selectedEngine + '_' + jobs.length };
+        const newJob: Job = { component_id: selectedEngine + '_' + jobs.length, engine_id: selectedEngine };
         setJobs([...jobs, newJob]);
         const newBox = <Draggable onMouseDown={
             () => { selecting === 'destination' ? onDestClick(newJob.component_id) : onSourceClick(newJob.component_id) }}>
@@ -97,6 +100,7 @@ function WorkflowPage() {
         setAddLinkBtnEnabled(false);
     }
     const handleOpenScript = (job: Job) => {
+        // TODO pass current job script to continue editing
         console.log("handle open script");
         setOpenScript(true);
         setCurrentJob(job);
@@ -108,18 +112,41 @@ function WorkflowPage() {
         } catch (error) {
             args = [newArgument];
         }
+        if (!Array.isArray(args)) {
+            args = [args];
+        }
         const script: Script = { content: newCode, entry_point: newEntryPoint, arguments: args };
+        console.log(script);
         setOpenScript(false);
         if (currentJob === null) return;
         currentJob.script = script;
         setCurrentJob(null);
     }
     const onExecute = async () => {
-        // TODO for each job, insert the scripts and update script id, then insert job
+        // for each job, insert the scripts and update script id, then insert job
+        jobs.forEach(async (job) => {
+            const script = job.script;
+            if (script == null) {
+                console.error('null script for job: ');
+                console.error(job);
+                return;
+            }
+            console.log(script);
+            await createScript({ entry_point: script?.entry_point, arguments: script?.arguments, content: script?.content })
+                .then(id => { if (job.script == null) { return; } job.script.id = id; })
+                .then(() => {
+                    if (job.script == null) return;
+                    createJob({
+                        script_id: job.script!.id,
+                        engine_id: job.engine_id,
+                        workflow_id: workflowId,
+                    });
+                });
+        });
 
         // TODO Link jobs for each line and increase count
 
-
+        // TODO set status of all jobs to runnable after setting up next jobs
 
         await runWorkflow({ id: workflowId });
         // TODO disable UI etc

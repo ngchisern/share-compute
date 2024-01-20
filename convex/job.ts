@@ -9,6 +9,20 @@ enum jobStatus {
     FAILED = 4,
 }
 
+export const createJob = mutation({
+    args: { script_id: v.id("script"), engine_id: v.id("engine"), workflow_id: v.id("workflow") },
+    handler: async (ctx, args) => {
+        const jobId = await ctx.db.insert("job", {
+            status: jobStatus.RUNNABLE, // actually pending next job info, 
+            script_id: args.script_id,
+            engine_id: args.engine_id,
+            workflow_id: args.workflow_id,
+            remaining: 0,   // increment later as we add links
+        });
+        return jobId;
+    },
+})
+
 export const get = query({
     args: {},
     handler: async (ctx) => {
@@ -17,7 +31,7 @@ export const get = query({
 });
 
 export const getJob = query({
-    args: { id: v.id("job")},
+    args: { id: v.id("job") },
     handler: async (ctx, args) => {
         return await ctx.db.query("job").filter(q =>
             q.eq(q.field("_id"), args.id)
@@ -26,7 +40,7 @@ export const getJob = query({
 });
 
 export const getNextJob = query({
-    args: { engine_id: v.id("engine")},
+    args: { engine_id: v.id("engine") },
     handler: async (ctx, args) => {
         return await ctx.db.query("job").filter(q =>
             q.and(
@@ -62,7 +76,7 @@ export const reduceDependency = mutation({
     handler: async (ctx, args) => {
         if (args.remaining < 0) {
             throw new Error("Remaining cannot be negative");
-        } 
+        }
 
         const remaining = args.remaining - 1;
         if (remaining === 0) {
