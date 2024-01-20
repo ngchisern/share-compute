@@ -3,7 +3,7 @@ import { useState } from "react";
 import CodeEditor from '@uiw/react-textarea-code-editor';
 import { Button, TextField } from '@mui/material';
 
-function Script() {
+function Script({ onScriptDone }) {
     const [code, setCode] = useState("");
     const [entryPoint, setEntryPoint] = useState("");
     const [argument, setArgument] = useState("");
@@ -11,18 +11,18 @@ function Script() {
     return (
         <div className="script-container">
             <div className="script-left-panel">
-            <CodeEditor
-                className='script-code'
-                value={code}
-                language="py"
-                placeholder="Write your python script here!"
-                onChange={(evn) => setCode(evn.target.value)}
-                padding={15}
-                style={{
-                    fontSize: 15,
-                    fontFamily: 'ui-monospace,SFMono-Regular,SF Mono,Consolas,Liberation Mono,Menlo,monospace',
-                }}
-            />
+                <CodeEditor
+                    className='script-code'
+                    value={code}
+                    language="py"
+                    placeholder="Write your python script here!"
+                    onChange={(evn) => setCode(evn.target.value)}
+                    padding={15}
+                    style={{
+                        fontSize: 15,
+                        fontFamily: 'ui-monospace,SFMono-Regular,SF Mono,Consolas,Liberation Mono,Menlo,monospace',
+                    }}
+                />
             </div>
             <div className="script-right-panel">
                 <div className="script-text-field">
@@ -48,12 +48,12 @@ function Script() {
                 </div>
                 <div className="script-text-field">
                     <h4
-                        style={ 
-                        {
-                            textAlign: "left",
-                            marginLeft: "10%"
-                        }
-                    }>
+                        style={
+                            {
+                                textAlign: "left",
+                                marginLeft: "10%"
+                            }
+                        }>
                         Arguments</h4>
                     <TextField
                         placeholder="E.g. [1, 2, 3]"
@@ -68,8 +68,9 @@ function Script() {
                     />
                 </div>
                 <div className='done-button'>
-                    <Button variant="contained" color="success">Done</Button>
-
+                    <Button variant="contained" color="success" onClick={() => onScriptDone(code, entryPoint, argument)}>
+                        Done
+                    </Button>
                 </div>
             </div>
         </div>

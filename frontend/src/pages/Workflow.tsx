@@ -14,6 +14,7 @@ import {
 } from '@mui/material';
 import Draggable from "react-draggable";
 import Xarrow, { Xwrapper } from "react-xarrows";
+import Script from "./Script";
 
 
 
@@ -26,7 +27,7 @@ type Line = {
 
 function WorkflowPage() {
     const [name, setName] = useState<string>("");
-    const [open, setOpen] = useState(false);
+    const [openEngine, setOpenEngine] = useState(false);
     const [selectedEngine, setSelectedEngine] = useState<any>(null);
     const [jobs, setJobs] = useState<any[]>([]);
     const [boxes, setBoxes] = useState<JSX.Element[]>([]);
@@ -35,9 +36,13 @@ function WorkflowPage() {
     const [selecting, setSelecting] = useState(""); // 'source' or 'destination'
     const [source, setSource] = useState<string>("");
     const [lines, setLines] = useState<Line[]>([]);
+    const [openScript, setOpenScript] = useState(false);
+    const [code, setCode] = useState("");
+    const [entryPoint, setEntryPoint] = useState("");
+    const [argument, setArgument] = useState("");
 
     const handleAddEngine = () => {
-        setOpen(true);
+        setOpenEngine(true);
         setSelectedEngine(null);
     };
     const onSourceClick = (job: string) => {
@@ -58,7 +63,7 @@ function WorkflowPage() {
         setSource("");
     }
     const handleClose = () => {
-        setOpen(false);
+        setOpenEngine(false);
         // do nothing after closing dialog if no engine is selected
         if (selectedEngine === null) {
             return;
@@ -72,10 +77,21 @@ function WorkflowPage() {
         setBoxes([...boxes, newBox]);
     };
     const handleAddLink = () => {
-        console.log("handle add link")
+        console.log("handle add link");
         setSelecting('source');
         setAddLinkBtnText("Click on source engine");
         setAddLinkBtnEnabled(false);
+    }
+    const handleOpenScript = () => {
+        console.log("handle open script");
+        setOpenScript(true);
+    }
+    const onScriptDone = (newCode: string, newEntryPoint: string, newArgument: string) => {
+        setCode(newCode);
+        setEntryPoint(newEntryPoint);
+        setArgument(newArgument);
+        setOpenScript(false);
+        // TODO
     }
 
     return (
@@ -103,7 +119,7 @@ function WorkflowPage() {
                         if (selecting === 'source') { onSourceClick(job); }
                         else if (selecting === 'destination') { onDestClick(job) };
                     }}>
-                    <div id={job} style={{ width: "100px", height: "100px", backgroundColor: "lightblue" }}>{job}</div>
+                    <div onDoubleClick={handleOpenScript} id={job} style={{ width: "100px", height: "100px", backgroundColor: "lightblue" }}>{job}</div>
                 </Draggable>)}
                 <Xwrapper>
                     {lines.map((line, i) => (
@@ -114,8 +130,8 @@ function WorkflowPage() {
             <Button>
                 Execute
             </Button>
-            <Dialog open={open} onClose={handleClose}>
-                <DialogTitle>{"Select an engine"}</DialogTitle>
+            <Dialog open={openEngine} onClose={handleClose}>
+                <DialogTitle>Select an engine</DialogTitle>
                 <DialogContent>
                     <Select onChange={(event) => setSelectedEngine(event.target.value)}>
                         {useQuery(api.engine.get)?.map(object => (
@@ -129,6 +145,13 @@ function WorkflowPage() {
                     <Button onClick={handleClose}>Cancel</Button>
                     <Button onClick={handleClose}>Okay</Button>
                 </DialogActions>
+            </Dialog>
+            <Dialog open={openScript}>
+                <DialogTitle>Script Editor</DialogTitle>
+                <DialogContent>
+                    <Script onScriptDone={onScriptDone} />
+                    {/* TODO */}
+                </DialogContent>
             </Dialog>
         </div>
     )
