@@ -25,18 +25,6 @@ type Engine = {
     status: any;
 }
 
-// const boxStyle = { border: 'grey solid 2px', borderRadius: '10px', padding: '5px' };
-
-const DraggableBox = ({ id }) => {
-    const updateXarrow = useXarrow();
-    return (
-        <Draggable onDrag={updateXarrow} onStop={updateXarrow}>
-            <div id={id}>
-                {id}
-            </div>
-        </Draggable>
-    );
-};
 
 
 function WorkflowPage() {
@@ -44,16 +32,20 @@ function WorkflowPage() {
     const [open, setOpen] = useState(false);
     const [selectedEngine, setSelectedEngine] = useState<any>(null);
     const [jobs, setJobs] = useState<any[]>([]);
+    const [boxes, setBoxes] = useState<JSX.Element[]>([]);
     const [addLinkBtnText, setAddLinkBtnText] = useState("+ Link");
     const [addLinkBtnEnabled, setAddLinkBtnEnabled] = useState(true);
-    const [isSelectingSource, setIsSelectingSource] = useState(false);
-    const [isSelectingDest, setIsSelectingDest] = useState(false);
-    const [sourceEngine, setSourceEngine] = useState(null);
-    const [destEngine, setDestEngine] = useState(null);
 
     const handleAddEngine = () => {
         setOpen(true);
         setSelectedEngine(null);
+    };
+    const DraggableBox = ({ id }) => {
+        return (
+            <Draggable>
+                <div style={{ width: "100px", height: "100px", backgroundColor: "lightblue" }}>{id}</div>
+            </Draggable>
+        );
     };
     const handleClose = () => {
         setOpen(false);
@@ -63,6 +55,9 @@ function WorkflowPage() {
         }
         const newJob = selectedEngine
         setJobs([...jobs, newJob]);
+        const newId = selectedEngine + '_' + jobs.length;
+        const newBox = <DraggableBox id={newId}></DraggableBox>
+        setBoxes([...boxes, newBox]);
     };
     const handleAddLink = () => {
         console.log("hello")
@@ -71,18 +66,7 @@ function WorkflowPage() {
         setAddLinkBtnEnabled(false);
         setIsSelectingSource(true);
     }
-    const onEngineClick = (event) => {
-        // TODO handle script
-        if (isSelectingSource) {
-            setSourceEngine(event.target);
-            setIsSelectingSource(false);
-            setIsSelectingDest(true);
-        } else if (isSelectingDest) {
-            setDestEngine(event.target);
-            setIsSelectingDest(false);
-            // TODO draw line
-        }
-    }
+
 
     return (
         <div className="workflow">
@@ -104,18 +88,7 @@ function WorkflowPage() {
                 </div>
             </div>
             <div className="workspace">
-                <Xwrapper>
-                    <DraggableBox id={'elem1'} />
-                    <DraggableBox id={'elem2'} />
-                    <Xarrow start={'elem1'} end="elem2" />
-                </Xwrapper>
-                {/* {jobs.map((job, index) => (
-                    <DraggableBox id={index}>
-                        <Button>
-                            {job}
-                        </Button>
-                    </DraggableBox>
-                ))} */}
+                {boxes}
             </div>
             <Button>
                 Execute
