@@ -1,17 +1,14 @@
 import "./App.css";
-import { useQuery } from "convex/react";
-import { api } from "../../convex/_generated/api";
+import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
+import HomePage from "./pages/Home";
 
 function App() {
-  const engines = useQuery(api.engine.get);
   return (
-    <div className="App">
-      <h1>Share Compute</h1>
-      <button>New Workflow</button>
-      {/* {engines?.map(({ _id,  name, status}) => (
-        <div key={_id}>{name} {status}</div>
-      ))} */}
-    </div>
+    <Router>
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+      </Routes>
+    </Router>
   );
 }
 
