@@ -28,6 +28,7 @@ function WorkflowPage() {
     const [name, setName] = useState<string>("");
     const [open, setOpen] = useState(false);
     const [selectedEngine, setSelectedEngine] = useState<any>(null);
+    const [jobs, setJobs] = useState<any[]>([]);
 
     const handleClickOpen = () => {
         setOpen(true);
@@ -39,8 +40,8 @@ function WorkflowPage() {
         if (selectedEngine === null) {
             return;
         }
-        // TODO add new engine job
-        setName("bla");
+        const newJob = selectedEngine
+        setJobs([...jobs, newJob]);
     };
 
     return (
@@ -60,14 +61,20 @@ function WorkflowPage() {
                     +
                 </Button>
             </div>
-            <Paper className="paper">
-                paper
-            </Paper>
+            <div className="workspace">
+                {jobs.map((job, index) => (
+                    <Draggable key={index}>
+                        <Button>
+                            {job}
+                        </Button>
+                    </Draggable>
+                ))}
+            </div>
             <Button>
                 Execute
             </Button>
             <Dialog open={open} onClose={handleClose}>
-                <DialogTitle>{"Select a machine"}</DialogTitle>
+                <DialogTitle>{"Select an engine"}</DialogTitle>
                 <DialogContent>
                     <Select onChange={(event) => setSelectedEngine(event.target.value)}>
                         {useQuery(api.engine.get)?.map(object => (
