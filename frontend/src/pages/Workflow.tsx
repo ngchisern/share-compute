@@ -1,7 +1,7 @@
 import "../App.css";
 import { useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
     Button,
     Dialog,
@@ -9,20 +9,17 @@ import {
     DialogContent,
     DialogTitle,
     MenuItem,
-    Paper,
     Select,
     TextField
 } from '@mui/material';
-import { createTheme, ThemeProvider } from '@mui/material/styles';
 import Draggable from "react-draggable";
-import { toast } from 'react-toastify';
-import Xarrow, { Xwrapper, useXarrow } from "react-xarrows";
+import Xarrow, { Xwrapper } from "react-xarrows";
 
 
-type Engine = {
-    _id: string;
-    name: string;
-    status: any;
+
+type Line = {
+    from: string;
+    to: string;
 }
 
 
@@ -35,38 +32,51 @@ function WorkflowPage() {
     const [boxes, setBoxes] = useState<JSX.Element[]>([]);
     const [addLinkBtnText, setAddLinkBtnText] = useState("+ Link");
     const [addLinkBtnEnabled, setAddLinkBtnEnabled] = useState(true);
+    const [selecting, setSelecting] = useState(""); // 'source' or 'destination'
+    const [source, setSource] = useState<string>("");
+    const [lines, setLines] = useState<Line[]>([]);
 
     const handleAddEngine = () => {
         setOpen(true);
         setSelectedEngine(null);
     };
-    const DraggableBox = ({ id }) => {
-        return (
-            <Draggable>
-                <div style={{ width: "100px", height: "100px", backgroundColor: "lightblue" }}>{id}</div>
-            </Draggable>
-        );
-    };
+    const onSourceClick = (job: string) => {
+        console.log('selecting source');
+        setSource(job);
+        setAddLinkBtnText("Click on destination engine");
+        setSelecting("destination");
+    }
+    const onDestClick = (job: string) => {
+        console.log('selecting dest');
+        setAddLinkBtnEnabled(true);
+        setAddLinkBtnText("+ Link");
+        const line = { from: source, to: job };
+        setLines([...lines, line]);
+        console.log(line)
+        console.log(lines);
+        setSelecting("");
+        setSource("");
+    }
     const handleClose = () => {
         setOpen(false);
         // do nothing after closing dialog if no engine is selected
         if (selectedEngine === null) {
             return;
         }
-        const newJob = selectedEngine
+        const newJob = selectedEngine + '_' + jobs.length
         setJobs([...jobs, newJob]);
-        const newId = selectedEngine + '_' + jobs.length;
-        const newBox = <DraggableBox id={newId}></DraggableBox>
+        const newBox = <Draggable onMouseDown={
+            () => { selecting === 'destination' ? onDestClick(newJob) : onSourceClick(newJob) }}>
+            <div style={{ width: "100px", height: "100px", backgroundColor: "lightblue" }}>{newJob}</div>
+        </Draggable>
         setBoxes([...boxes, newBox]);
     };
     const handleAddLink = () => {
-        console.log("hello")
-        // TODO handle from and to using states
+        console.log("handle add link")
+        setSelecting('source');
         setAddLinkBtnText("Click on source engine");
         setAddLinkBtnEnabled(false);
-        setIsSelectingSource(true);
     }
-
 
     return (
         <div className="workflow">
@@ -88,7 +98,18 @@ function WorkflowPage() {
                 </div>
             </div>
             <div className="workspace">
-                {boxes}
+                {jobs.map((job) => <Draggable onMouseDown={
+                    () => {
+                        if (selecting === 'source') { onSourceClick(job); }
+                        else if (selecting === 'destination') { onDestClick(job) };
+                    }}>
+                    <div id={job} style={{ width: "100px", height: "100px", backgroundColor: "lightblue" }}>{job}</div>
+                </Draggable>)}
+                <Xwrapper>
+                    {lines.map((line, i) => (
+                        <Xarrow key={i} start={line.from} end={line.to} zIndex={100} />
+                    ))}
+                </Xwrapper>
             </div>
             <Button>
                 Execute
