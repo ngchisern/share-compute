@@ -1,8 +1,12 @@
+import { Link } from "react-router-dom";
+
 function HomePage() {
     return (
         <div>
             <h1>Share Compute</h1>
-            <button>New Workflow</button>
+            <Link to="/workflow">
+                <button>New Workflow</button>
+            </Link>
         </div>
     )
 }
