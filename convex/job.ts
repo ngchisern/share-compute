@@ -13,7 +13,7 @@ export const createJob = mutation({
     args: { script_id: v.id("script"), engine_id: v.id("engine"), workflow_id: v.id("workflow") },
     handler: async (ctx, args) => {
         const jobId = await ctx.db.insert("job", {
-            status: jobStatus.RUNNABLE, // actually pending next job info, 
+            status: jobStatus.BLOCKING, // set to runnable when next job info is updated
             script_id: args.script_id,
             engine_id: args.engine_id,
             workflow_id: args.workflow_id,
@@ -21,17 +21,6 @@ export const createJob = mutation({
         });
         return jobId;
     },
-})
-
-export const connectJobs = mutation({
-    args: { from_id: v.id("job"), to_id: v.id("job") },
-    handler: async (ctx, args) => {
-        await ctx.db.patch(args.from_id, { next: args.to_id });
-        const to_job = await ctx.db.query("job").filter(q =>
-            q.eq(q.field("_id"), args.to_id)
-        ).first();
-        await ctx.db.patch(args.to_id, { remaining: to_job!.remaining + 1 });
-    }
 })
 
 export const get = query({
@@ -58,6 +47,24 @@ export const getNextJob = query({
                 q.eq(q.field("engine_id"), args.engine_id),
                 q.eq(q.field("status"), jobStatus.RUNNABLE))
         ).order("asc").first();
+    },
+});
+
+export const connectJobs = mutation({
+    args: { from_id: v.id("job"), to_id: v.id("job") },
+    handler: async (ctx, args) => {
+        await ctx.db.patch(args.from_id, { next: args.to_id });
+        const to_job = await ctx.db.query("job").filter(q =>
+            q.eq(q.field("_id"), args.to_id)
+        ).first();
+        await ctx.db.patch(args.to_id, { remaining: to_job!.remaining + 1 });
+    }
+})
+
+export const enableJob = mutation({
+    args: { id: v.id("job") },
+    handler: async (ctx, args) => {
+        await ctx.db.patch(args.id, { status: jobStatus.RUNNABLE });
     },
 });
 

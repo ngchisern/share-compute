@@ -59,6 +59,7 @@ function WorkflowPage() {
     const createScript = useMutation(api.script.createScript);
     const createJob = useMutation(api.job.createJob);
     const connectJobs = useMutation(api.job.connectJobs);
+    const enableJob = useMutation(api.job.enableJob);
 
     const handleAddEngine = () => {
         setOpenEngine(true);
@@ -153,7 +154,8 @@ function WorkflowPage() {
             connectJobs({ from_id: line.from.id, to_id: line.to.id });
         })
 
-        // TODO set status of all jobs to runnable after setting up next jobs
+        // set status of all jobs to runnable after setting up next jobs
+        jobs.forEach((job) => enableJob({ id: job.id }));
 
         await runWorkflow({ id: workflowId });
         // TODO disable UI etc
