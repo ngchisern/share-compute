@@ -17,6 +17,7 @@ import type {
 import type * as engine from "../engine.js";
 import type * as job from "../job.js";
 import type * as script from "../script.js";
+import type * as workflow from "../workflow.js";
 
 /**
  * A utility for referencing Convex functions in your app's API.
@@ -30,6 +31,7 @@ declare const fullApi: ApiFromModules<{
   engine: typeof engine;
   job: typeof job;
   script: typeof script;
+  workflow: typeof workflow;
 }>;
 export declare const api: FilterApi<
   typeof fullApi,

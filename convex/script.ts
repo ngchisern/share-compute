@@ -9,3 +9,10 @@ export const getJobScript = query({
         ).first();
     },
 });
+
+export const updateOutput = mutation({
+    args: { id: v.id("script"), output: v.string() },
+    handler: async (ctx, args) => {
+        await ctx.db.patch(args.id, { output: args.output });
+    },
+});

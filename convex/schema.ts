@@ -15,8 +15,7 @@ export default defineSchema({
   script: defineTable({
     _id: v.id("job"),
     entry_point: v.string(),
-    arguments: v.array(v.string()),
-    return_type: v.number(),
+    arguments: v.array(v.any()),
     content: v.string(),
     output: v.optional(v.string()),
   }),

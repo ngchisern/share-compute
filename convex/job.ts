@@ -16,6 +16,15 @@ export const get = query({
     },
 });
 
+export const getJob = query({
+    args: { id: v.id("job")},
+    handler: async (ctx, args) => {
+        return await ctx.db.query("job").filter(q =>
+            q.eq(q.field("_id"), args.id)
+        ).first();
+    },
+});
+
 export const getNextJob = query({
     args: { engine_id: v.id("engine")},
     handler: async (ctx, args) => {
@@ -24,5 +33,42 @@ export const getNextJob = query({
                 q.eq(q.field("engine_id"), args.engine_id),
                 q.eq(q.field("status"), jobStatus.RUNNABLE))
         ).order("asc").first();
+    },
+});
+
+export const runJob = mutation({
+    args: { id: v.id("job") },
+    handler: async (ctx, args) => {
+        await ctx.db.patch(args.id, { status: jobStatus.RUNNING });
+    },
+});
+
+export const failJob = mutation({
+    args: { id: v.id("job") },
+    handler: async (ctx, args) => {
+        await ctx.db.patch(args.id, { status: jobStatus.FAILED });
+    },
+});
+
+export const completeJob = mutation({
+    args: { id: v.id("job") },
+    handler: async (ctx, args) => {
+        await ctx.db.patch(args.id, { status: jobStatus.COMPLETED });
+    },
+});
+
+export const reduceDependency = mutation({
+    args: { id: v.id("job"), remaining: v.number() },
+    handler: async (ctx, args) => {
+        if (args.remaining < 0) {
+            throw new Error("Remaining cannot be negative");
+        } 
+
+        const remaining = args.remaining - 1;
+        if (remaining === 0) {
+            await ctx.db.patch(args.id, { remaining: args.remaining, status: jobStatus.RUNNABLE });
+        } else {
+            await ctx.db.patch(args.id, { remaining: args.remaining });
+        }
     },
 });
