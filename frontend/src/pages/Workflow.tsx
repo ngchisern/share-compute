@@ -1,5 +1,6 @@
 import "../App.css";
-import { useQuery } from "convex/react";
+import Script from "./Script";
+import { useMutation, useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { useState } from "react";
 import {
@@ -14,15 +15,11 @@ import {
 } from '@mui/material';
 import Draggable from "react-draggable";
 import Xarrow, { Xwrapper } from "react-xarrows";
-import Script from "./Script";
-
-
 
 type Line = {
     from: string;
     to: string;
 }
-
 
 
 function WorkflowPage() {
@@ -40,6 +37,13 @@ function WorkflowPage() {
     const [code, setCode] = useState("");
     const [entryPoint, setEntryPoint] = useState("");
     const [argument, setArgument] = useState("");
+
+    // TODO ensure only create one workflow
+    var workflowId: any = '';
+    const createWorkflow = useMutation(api.workflow.createWorkflow);
+    createWorkflow().then(id => { workflowId = id; console.log(workflowId); });
+
+    const runWorkflow = useMutation(api.workflow.runWorkflow);
 
     const handleAddEngine = () => {
         setOpenEngine(true);
@@ -91,7 +95,11 @@ function WorkflowPage() {
         setEntryPoint(newEntryPoint);
         setArgument(newArgument);
         setOpenScript(false);
-        // TODO
+        // TODO attach script to job
+    }
+    const onExecute = async () => {
+        await runWorkflow({ id: workflowId });
+        // TODO disable UI etc
     }
 
     return (
@@ -127,7 +135,7 @@ function WorkflowPage() {
                     ))}
                 </Xwrapper>
             </div>
-            <Button>
+            <Button onClick={onExecute}>
                 Execute
             </Button>
             <Dialog open={openEngine} onClose={handleClose}>

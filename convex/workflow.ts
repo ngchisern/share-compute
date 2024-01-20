@@ -8,6 +8,21 @@ enum workflowStatus {
     FAILED = 3,
 }
 
+export const createWorkflow = mutation({
+    args: {},
+    handler: async (ctx, args) => {
+        const workflowId = await ctx.db.insert("workflow", { status: workflowStatus.IDLE });
+        return workflowId;
+    },
+})
+
+export const runWorkflow = mutation({
+    args: { id: v.id("workflow") },
+    handler: async (ctx, args) => {
+        await ctx.db.patch(args.id, { status: workflowStatus.RUNNING });
+    },
+})
+
 export const failWorkflow = mutation({
     args: { id: v.id("workflow") },
     handler: async (ctx, args) => {
