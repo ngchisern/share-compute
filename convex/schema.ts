@@ -4,6 +4,7 @@ import { v } from "convex/values";
 export default defineSchema({
   engine: defineTable({
     _id: v.id("engine"),
+    mac: v.string(),
     name: v.string(),
     status: v.any(),
   }),

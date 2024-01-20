@@ -3,7 +3,9 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
+  "type": "module",
   "scripts": {
+    "dev": "node engine/script.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -19,6 +21,8 @@
   "homepage": "https://github.com/ngchisern/share-compute#readme",
   "dependencies": {
     "convex": "^1.8.0",
-    "dotenv": "^16.3.2"
-  }
+    "dotenv": "^16.3.2",
+    "getmac": "^6.6.0"
+  },
+  "devDependencies": {}
 }
