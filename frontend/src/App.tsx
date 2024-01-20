@@ -5,7 +5,6 @@ import CssBaseline from '@mui/material/CssBaseline';
 
 import HomePage from "./pages/Home";
 import WorkflowPage from "./pages/Workflow";
-import ScriptPage from "./pages/Script";
 
 const darkTheme = createTheme({
   palette: {
@@ -21,7 +20,6 @@ function App() {
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/workflow" element={<WorkflowPage />} />
-        <Route path="/script" element={<ScriptPage />} />
       </Routes>
     </Router>
     </ThemeProvider>
