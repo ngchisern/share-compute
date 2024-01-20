@@ -15,6 +15,8 @@ import type {
   FunctionReference,
 } from "convex/server";
 import type * as engine from "../engine.js";
+import type * as job from "../job.js";
+import type * as script from "../script.js";
 
 /**
  * A utility for referencing Convex functions in your app's API.
@@ -26,6 +28,8 @@ import type * as engine from "../engine.js";
  */
 declare const fullApi: ApiFromModules<{
   engine: typeof engine;
+  job: typeof job;
+  script: typeof script;
 }>;
 export declare const api: FilterApi<
   typeof fullApi,
