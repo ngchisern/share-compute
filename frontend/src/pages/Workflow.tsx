@@ -21,12 +21,24 @@ type Line = {
     to: string;
 }
 
+type Script = {
+    id?: any;
+    entry_point: string;
+    arguments: any[];
+    content: string;
+}
+
+type Job = {
+    component_id: string;
+    script?: Script;
+}
+
 
 function WorkflowPage() {
     const [name, setName] = useState<string>("");
     const [openEngine, setOpenEngine] = useState(false);
     const [selectedEngine, setSelectedEngine] = useState<any>(null);
-    const [jobs, setJobs] = useState<any[]>([]);
+    const [jobs, setJobs] = useState<Job[]>([]);
     const [boxes, setBoxes] = useState<JSX.Element[]>([]);
     const [addLinkBtnText, setAddLinkBtnText] = useState("+ Link");
     const [addLinkBtnEnabled, setAddLinkBtnEnabled] = useState(true);
@@ -34,9 +46,7 @@ function WorkflowPage() {
     const [source, setSource] = useState<string>("");
     const [lines, setLines] = useState<Line[]>([]);
     const [openScript, setOpenScript] = useState(false);
-    const [code, setCode] = useState("");
-    const [entryPoint, setEntryPoint] = useState("");
-    const [argument, setArgument] = useState("");
+    const [currentJob, setCurrentJob] = useState<Job | null>(null);    // currently editing job
 
     // TODO ensure only create one workflow
     var workflowId: any = '';
@@ -72,11 +82,11 @@ function WorkflowPage() {
         if (selectedEngine === null) {
             return;
         }
-        const newJob = selectedEngine + '_' + jobs.length
+        const newJob: Job = { component_id: selectedEngine + '_' + jobs.length };
         setJobs([...jobs, newJob]);
         const newBox = <Draggable onMouseDown={
-            () => { selecting === 'destination' ? onDestClick(newJob) : onSourceClick(newJob) }}>
-            <div style={{ width: "100px", height: "100px", backgroundColor: "lightblue" }}>{newJob}</div>
+            () => { selecting === 'destination' ? onDestClick(newJob.component_id) : onSourceClick(newJob.component_id) }}>
+            <div style={{ width: "100px", height: "100px", backgroundColor: "lightblue" }}>{newJob.component_id}</div>
         </Draggable>
         setBoxes([...boxes, newBox]);
     };
@@ -86,18 +96,31 @@ function WorkflowPage() {
         setAddLinkBtnText("Click on source engine");
         setAddLinkBtnEnabled(false);
     }
-    const handleOpenScript = () => {
+    const handleOpenScript = (job: Job) => {
         console.log("handle open script");
         setOpenScript(true);
+        setCurrentJob(job);
     }
     const onScriptDone = (newCode: string, newEntryPoint: string, newArgument: string) => {
-        setCode(newCode);
-        setEntryPoint(newEntryPoint);
-        setArgument(newArgument);
+        var args: any[] = [];
+        try {
+            args = JSON.parse(newArgument);
+        } catch (error) {
+            args = [newArgument];
+        }
+        const script: Script = { content: newCode, entry_point: newEntryPoint, arguments: args };
         setOpenScript(false);
-        // TODO attach script to job
+        if (currentJob === null) return;
+        currentJob.script = script;
+        setCurrentJob(null);
     }
     const onExecute = async () => {
+        // TODO for each job, insert the scripts and update script id, then insert job
+
+        // TODO Link jobs for each line and increase count
+
+
+
         await runWorkflow({ id: workflowId });
         // TODO disable UI etc
     }
@@ -124,10 +147,15 @@ function WorkflowPage() {
             <div className="workspace">
                 {jobs.map((job) => <Draggable onMouseDown={
                     () => {
-                        if (selecting === 'source') { onSourceClick(job); }
-                        else if (selecting === 'destination') { onDestClick(job) };
+                        if (selecting === 'source') { onSourceClick(job.component_id); }
+                        else if (selecting === 'destination') { onDestClick(job.component_id) };
                     }}>
-                    <div onDoubleClick={handleOpenScript} id={job} style={{ width: "100px", height: "100px", backgroundColor: "lightblue" }}>{job}</div>
+                    <div
+                        onDoubleClick={() => handleOpenScript(job)}
+                        id={job.component_id}
+                        style={{ width: "100px", height: "100px", backgroundColor: "lightblue" }}>
+                        {job.component_id}
+                    </div>
                 </Draggable>)}
                 <Xwrapper>
                     {lines.map((line, i) => (
