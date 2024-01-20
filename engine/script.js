@@ -9,8 +9,8 @@ dotenv.config({ path: ".env.local" });
 const httpClient = new ConvexHttpClient(process.env["CONVEX_URL"]);
 const client = new ConvexClient(process.env["CONVEX_URL"]);
 
-// const engine_id = await register(httpClient);
-const engine_id = "jd70ke72qy2dr1217sav93cknd6hwsa1";
+const engine_id = await register(httpClient);
+// const engine_id = "jd70ke72qy2dr1217sav93cknd6hwsa1";
 
 let running = false;
 const unsubscribe = client.onUpdate(
@@ -31,7 +31,7 @@ const unsubscribe = client.onUpdate(
 );
 
 process.on("SIGINT", async () => {
-  //   await deregister(httpClient, engine_id);
+  await deregister(httpClient, engine_id);
   unsubscribe();
   process.exit();
 });

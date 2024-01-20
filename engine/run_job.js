@@ -20,7 +20,7 @@ const execute = async (client, job, script) => {
   PythonShell.runString(code, null)
     .then(async (output) => {
       await updateOutput(client, script, output[output.length - 1]);
-      await succeed(client, job);
+      await succeed(client, job, output[output.length - 1]);
     })
     .catch(async (error) => {
       await updateOutput(client, script, error);
@@ -56,21 +56,30 @@ const fail = async (client, job) => {
     });
 };
 
-const succeed = async (client, job) => {
+const succeed = async (client, job, output) => {
   await client
     .mutation(api.job.completeJob, {
       id: job._id,
     })
     .then(async () => {
       const next = job.next;
-      if (next) {
-        await client.mutation(api.job.reduceDependency, {
-          id: next,
-        });
-      } else {
+      if (!next) {
         await client.mutation(api.workflow.completeWorkflow, {
           id: job.workflow_id,
         });
       }
+
+      await client
+        .query(api.job.getJob, {
+          id: next,
+        })
+        .then(async (job) => {
+          let args = job.arguments;
+          args.push(output);
+
+          await client.mutation(api.job.reduceDependency, {
+            id: next,
+          });
+        });
     });
 };
