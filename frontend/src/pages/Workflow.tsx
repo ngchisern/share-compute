@@ -1,33 +1,43 @@
+import "../App.css";
 import { useState } from "react";
+import { Button, TextField } from '@mui/material';
+import { createTheme, ThemeProvider } from '@mui/material/styles';
 import Draggable from "react-draggable";
+
+const darkTheme = createTheme({
+    palette: {
+        mode: 'dark',
+    },
+    typography: {
+        fontFamily: 'Roboto',
+        body1: {
+            color: '#ffffff'
+        }
+    }
+})
 
 function WorkflowPage() {
     const [name, setName] = useState<string>("");
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', width: '100%' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%'}}>
-                <input
-                    type="text"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                />
-                <button>+</button>
+        <ThemeProvider theme={darkTheme}>
+            <div className="workflow">
+                <div className="top-bar">
+                    <TextField
+                        placeholder="My New Workflow"
+                        type="text"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                    />
+                    <Button variant="contained">
+                        +
+                    </Button>
+                </div>
+                <div className="panel">
+                    bla
+                </div>
             </div>
-            {/* <div style={{ flex: 1, display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
-                <Draggable>
-                    <div style={{ border: '1px solid black', padding: '10px' }}>
-                        Draggable Block
-                    </div>
-                    <div style={{ border: '1px solid black', padding: '10px' }}>
-                        Draggable Block
-                    </div>
-                    <div style={{ border: '1px solid black', padding: '10px' }}>
-                        Draggable Block
-                    </div>
-                </Draggable>
-            </div> */}
-        </div>
+        </ThemeProvider>
     )
 }
 
