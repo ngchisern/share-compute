@@ -1,7 +1,7 @@
 import "../App.css";
 import { useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
     Button,
     Dialog,
@@ -9,34 +9,19 @@ import {
     DialogContent,
     DialogTitle,
     MenuItem,
-    Paper,
     Select,
     TextField
 } from '@mui/material';
-import { createTheme, ThemeProvider } from '@mui/material/styles';
 import Draggable from "react-draggable";
-import { toast } from 'react-toastify';
-import Xarrow, { Xwrapper, useXarrow } from "react-xarrows";
+import Xarrow, { Xwrapper } from "react-xarrows";
 
 
-type Engine = {
-    _id: string;
-    name: string;
-    status: any;
+
+type Line = {
+    from: string;
+    to: string;
 }
 
-// const boxStyle = { border: 'grey solid 2px', borderRadius: '10px', padding: '5px' };
-
-const DraggableBox = ({ id }) => {
-    const updateXarrow = useXarrow();
-    return (
-        <Draggable onDrag={updateXarrow} onStop={updateXarrow}>
-            <div id={id}>
-                {id}
-            </div>
-        </Draggable>
-    );
-};
 
 
 function WorkflowPage() {
@@ -44,44 +29,53 @@ function WorkflowPage() {
     const [open, setOpen] = useState(false);
     const [selectedEngine, setSelectedEngine] = useState<any>(null);
     const [jobs, setJobs] = useState<any[]>([]);
+    const [boxes, setBoxes] = useState<JSX.Element[]>([]);
     const [addLinkBtnText, setAddLinkBtnText] = useState("+ Link");
     const [addLinkBtnEnabled, setAddLinkBtnEnabled] = useState(true);
-    const [isSelectingSource, setIsSelectingSource] = useState(false);
-    const [isSelectingDest, setIsSelectingDest] = useState(false);
-    const [sourceEngine, setSourceEngine] = useState(null);
-    const [destEngine, setDestEngine] = useState(null);
+    const [selecting, setSelecting] = useState(""); // 'source' or 'destination'
+    const [source, setSource] = useState<string>("");
+    const [lines, setLines] = useState<Line[]>([]);
 
     const handleAddEngine = () => {
         setOpen(true);
         setSelectedEngine(null);
     };
+    const onSourceClick = (job: string) => {
+        console.log('selecting source');
+        setSource(job);
+        setAddLinkBtnText("Click on destination engine");
+        setSelecting("destination");
+    }
+    const onDestClick = (job: string) => {
+        console.log('selecting dest');
+        setAddLinkBtnEnabled(true);
+        setAddLinkBtnText("+ Link");
+        const line = { from: source, to: job };
+        setLines([...lines, line]);
+        console.log(line)
+        console.log(lines);
+        setSelecting("");
+        setSource("");
+    }
     const handleClose = () => {
         setOpen(false);
         // do nothing after closing dialog if no engine is selected
         if (selectedEngine === null) {
             return;
         }
-        const newJob = selectedEngine
+        const newJob = selectedEngine + '_' + jobs.length
         setJobs([...jobs, newJob]);
+        const newBox = <Draggable onMouseDown={
+            () => { selecting === 'destination' ? onDestClick(newJob) : onSourceClick(newJob) }}>
+            <div style={{ width: "100px", height: "100px", backgroundColor: "lightblue" }}>{newJob}</div>
+        </Draggable>
+        setBoxes([...boxes, newBox]);
     };
     const handleAddLink = () => {
-        console.log("hello")
-        // TODO handle from and to using states
+        console.log("handle add link")
+        setSelecting('source');
         setAddLinkBtnText("Click on source engine");
         setAddLinkBtnEnabled(false);
-        setIsSelectingSource(true);
-    }
-    const onEngineClick = (event) => {
-        // TODO handle script
-        if (isSelectingSource) {
-            setSourceEngine(event.target);
-            setIsSelectingSource(false);
-            setIsSelectingDest(true);
-        } else if (isSelectingDest) {
-            setDestEngine(event.target);
-            setIsSelectingDest(false);
-            // TODO draw line
-        }
     }
 
     return (
@@ -104,18 +98,18 @@ function WorkflowPage() {
                 </div>
             </div>
             <div className="workspace">
+                {jobs.map((job) => <Draggable onMouseDown={
+                    () => {
+                        if (selecting === 'source') { onSourceClick(job); }
+                        else if (selecting === 'destination') { onDestClick(job) };
+                    }}>
+                    <div id={job} style={{ width: "100px", height: "100px", backgroundColor: "lightblue" }}>{job}</div>
+                </Draggable>)}
                 <Xwrapper>
-                    <DraggableBox id={'elem1'} />
-                    <DraggableBox id={'elem2'} />
-                    <Xarrow start={'elem1'} end="elem2" />
+                    {lines.map((line, i) => (
+                        <Xarrow key={i} start={line.from} end={line.to} zIndex={100} />
+                    ))}
                 </Xwrapper>
-                {/* {jobs.map((job, index) => (
-                    <DraggableBox id={index}>
-                        <Button>
-                            {job}
-                        </Button>
-                    </DraggableBox>
-                ))} */}
             </div>
             <Button>
                 Execute
