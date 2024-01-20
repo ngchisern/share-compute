@@ -1,6 +1,6 @@
 import "../App.css";
 import { useState } from "react";
-import { Button, TextField } from '@mui/material';
+import { Button, Paper, TextField } from '@mui/material';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import Draggable from "react-draggable";
 
@@ -9,7 +9,6 @@ const darkTheme = createTheme({
         mode: 'dark',
     },
     typography: {
-        fontFamily: 'Roboto',
         body1: {
             color: '#ffffff'
         }
@@ -33,9 +32,12 @@ function WorkflowPage() {
                         +
                     </Button>
                 </div>
-                <div className="panel">
-                    bla
-                </div>
+                <Paper className="paper">
+                    paper
+                </Paper>
+                <Button>
+                    Execute
+                </Button>
             </div>
         </ThemeProvider>
     )
