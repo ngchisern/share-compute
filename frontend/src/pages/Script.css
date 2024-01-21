@@ -1,11 +1,11 @@
 .script-container {
     display: flex;
     height: 90vh;
-    width: 100vh;
+    width: 70vw;
 }
 
 .script-left-panel {
-    flex: 1;
+    flex: 2;
 }
 
 .script-right-panel {
@@ -13,6 +13,7 @@
     display: flex;
     flex-direction: column;
     margin: auto;
+    text-align: center;
 }
 
 .script-code {

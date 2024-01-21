@@ -26,3 +26,16 @@ export const updateOutput = mutation({
         await ctx.db.patch(args.id, { output: args.output });
     },
 });
+
+export const getOutput = query({
+    args: { id: v.any() },  // don't crash even if invalid id
+    handler: async (ctx, args) => {
+        const script = await ctx.db.query("script").filter(q =>
+            q.eq(q.field("_id"), args.id)
+        ).first();
+        if (script === null) {
+            return null;
+        }
+        return script.output;
+    },
+});

@@ -1,0 +1,29 @@
+.workflow {
+    display: flex;
+    flex-direction: column;
+    height: 90vh;
+}
+
+.top-bar {
+    /* height: 50px; */
+    width: 80vw;
+    justify-content: space-between;
+    display: flex;
+    align-items: center;
+    padding-bottom: 8px;
+}
+
+.top-bar-button {
+    margin-left: 8px;
+}
+
+.workspace {
+    border-radius: '20px';
+    border: '2px solid';
+    border-color: white;
+    background-color: grey;
+    width: '100%';
+    height: '100%px';
+    flex-grow: 1;
+    position: relative;
+}

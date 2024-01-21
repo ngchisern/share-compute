@@ -1,8 +1,8 @@
-import "../App.css";
+import "./Workflow.css";
 import Script from "./Script";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
     Button,
     Dialog,
@@ -15,12 +15,16 @@ import {
 } from '@mui/material';
 import Draggable from "react-draggable";
 import Xarrow, { Xwrapper } from "react-xarrows";
+import BarLoader from "react-spinners/BarLoader";
+
+
 
 type Script = {
     id?: any;
     entry_point: string;
     arguments: any[];
     content: string;
+    output?: string | null;
 }
 
 type Job = {
@@ -28,6 +32,8 @@ type Job = {
     component_id: string;
     script?: Script;
     engine_id: any;
+    component_content?: JSX.Element;
+    completed?: boolean;
 }
 
 type Line = {
@@ -49,17 +55,20 @@ function WorkflowPage() {
     const [lines, setLines] = useState<Line[]>([]);
     const [openScript, setOpenScript] = useState(false);
     const [currentJob, setCurrentJob] = useState<Job | null>(null);    // currently editing job
+    const [isPolling, setIsPolling] = useState(false);
+    const [currentScriptId, setCurrentScriptId] = useState<any>("");    // for getting outputs
 
     // TODO ensure only create one workflow
     var workflowId: any = '';
     const createWorkflow = useMutation(api.workflow.createWorkflow);
-    createWorkflow().then(id => { workflowId = id; console.log(workflowId); });
+    createWorkflow().then(id => { workflowId = id; });
 
     const runWorkflow = useMutation(api.workflow.runWorkflow);
     const createScript = useMutation(api.script.createScript);
     const createJob = useMutation(api.job.createJob);
     const connectJobs = useMutation(api.job.connectJobs);
     const enableJob = useMutation(api.job.enableJob);
+    const output = useQuery(api.script.getOutput, { id: currentScriptId });
 
     const handleAddEngine = () => {
         setOpenEngine(true);
@@ -89,7 +98,12 @@ function WorkflowPage() {
         if (selectedEngine === null) {
             return;
         }
-        const newJob: Job = { component_id: selectedEngine + '_' + jobs.length, engine_id: selectedEngine };
+        const component_content = <a>{selectedEngine}</a>;
+        const newJob: Job = {
+            component_id: selectedEngine + '_' + jobs.length,
+            engine_id: selectedEngine,
+            component_content: component_content
+        };
         setJobs([...jobs, newJob]);
         const newBox = <Draggable onMouseDown={
             () => { selecting === 'destination' ? onDestClick(newJob) : onSourceClick(newJob) }}>
@@ -128,7 +142,7 @@ function WorkflowPage() {
     }
     const onExecute = async () => {
         // for each job, insert the scripts and update script id, then insert job
-        jobs.forEach(async (job) => {
+        await jobs.forEach(async (job) => {
             const script = job.script;
             if (script == null) {
                 console.error('null script for job: ');
@@ -138,7 +152,7 @@ function WorkflowPage() {
             console.log(script);
             await createScript({ entry_point: script?.entry_point, arguments: script?.arguments, content: script?.content })
                 .then(id => { if (job.script == null) { return; } job.script.id = id; })
-                .then(() => {
+                .then(async () => {
                     if (job.script == null) return;
                     createJob({
                         script_id: job.script!.id,
@@ -159,13 +173,37 @@ function WorkflowPage() {
 
         await runWorkflow({ id: workflowId });
         // TODO disable UI etc
+
+        // change all job component content to loading bar
+        jobs.forEach((job) => {
+            job.component_content = <BarLoader />;
+        })
+        setJobs(jobs);
+
+        // repeatedly check all unfinished jobs for output
+        setIsPolling(true);
+        // setInterval(() => {
+        //     jobs.forEach((job) => {
+        //         console.log(job);
+        //         if (job.script == null) return;
+        //         console.log("job script not empty");
+        //         setCurrentScriptId(job.script.id);
+        //         console.log(job.script.id + " " + output);
+        //         if (output == null) return;
+        //         job.script.output = output;
+        //         job.component_content = <div>{output}</div>
+        //         job.completed = true;
+        //         setJobs(jobs);
+        //     })
+        // }, 3000);
+
+        // TODO do only for final job (try)
     }
 
     return (
         <div className="workflow">
             <div className="top-bar">
                 <TextField
-                    variant="filled"
                     placeholder="My New Workflow"
                     type="text"
                     value={name}
@@ -175,22 +213,23 @@ function WorkflowPage() {
                     <Button variant="contained" onClick={handleAddEngine}>
                         + Engine
                     </Button>
-                    <Button variant="contained" onClick={handleAddLink} disabled={!addLinkBtnEnabled}>
+                    <Button variant="contained" onClick={handleAddLink} disabled={!addLinkBtnEnabled} style={{ marginLeft: "8px" }}>
                         {addLinkBtnText}
                     </Button>
                 </div>
             </div>
             <div className="workspace">
-                {jobs.map((job) => <Draggable onMouseDown={
-                    () => {
-                        if (selecting === 'source') { onSourceClick(job); }
-                        else if (selecting === 'destination') { onDestClick(job) };
-                    }}>
+                {jobs.map((job) => <Draggable
+                    onMouseDown={
+                        () => {
+                            if (selecting === 'source') { onSourceClick(job); }
+                            else if (selecting === 'destination') { onDestClick(job) };
+                        }}>
                     <div
                         onDoubleClick={() => handleOpenScript(job)}
                         id={job.component_id}
-                        style={{ width: "100px", height: "100px", backgroundColor: "lightblue" }}>
-                        {job.component_id}
+                        style={{ display: "inline-block", padding: "10px", borderRadius: "4px", backgroundColor: "lightblue" }}>
+                        {job.component_content}
                     </div>
                 </Draggable>)}
                 <Xwrapper>
@@ -218,7 +257,7 @@ function WorkflowPage() {
                     <Button onClick={handleClose}>Okay</Button>
                 </DialogActions>
             </Dialog>
-            <Dialog open={openScript}>
+            <Dialog open={openScript} fullWidth maxWidth="lg">
                 <DialogTitle>Script Editor</DialogTitle>
                 <DialogContent>
                     <Script onScriptDone={onScriptDone} />
