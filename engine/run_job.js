@@ -23,7 +23,7 @@ const execute = async (client, job, script) => {
       await succeed(client, job, output[output.length - 1]);
     })
     .catch(async (error) => {
-      await updateOutput(client, script, error);
+      await updateOutput(client, script, error["traceback"]);
       await fail(client, job);
     });
 };
@@ -33,7 +33,13 @@ const apply_arguments = async (script) => {
     .map((arg) => "'" + arg + "'")
     .join(",");
   const code =
-    script.content + "\n\n" + script.entry_point + "(" + quoted_arguments + ")";
+    script.content +
+    "\n\n" +
+    "print(" +
+    script.entry_point +
+    "(" +
+    quoted_arguments +
+    "))";
   return code;
 };
 
@@ -67,6 +73,7 @@ const succeed = async (client, job, output) => {
         await client.mutation(api.workflow.completeWorkflow, {
           id: job.workflow_id,
         });
+        return;
       }
 
       await client

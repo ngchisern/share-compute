@@ -50,12 +50,7 @@ function WorkflowPage() {
     const [openScript, setOpenScript] = useState(false);
     const [currentJob, setCurrentJob] = useState<Job | null>(null);    // currently editing job
 
-    // TODO ensure only create one workflow
-    var workflowId: any = '';
     const createWorkflow = useMutation(api.workflow.createWorkflow);
-    createWorkflow().then(id => { workflowId = id; console.log(workflowId); });
-
-    const runWorkflow = useMutation(api.workflow.runWorkflow);
     const createScript = useMutation(api.script.createScript);
     const createJob = useMutation(api.job.createJob);
     const connectJobs = useMutation(api.job.connectJobs);
@@ -127,38 +122,48 @@ function WorkflowPage() {
         setCurrentJob(null);
     }
     const onExecute = async () => {
-        // for each job, insert the scripts and update script id, then insert job
-        jobs.forEach(async (job) => {
-            const script = job.script;
-            if (script == null) {
-                console.error('null script for job: ');
-                console.error(job);
-                return;
+        createWorkflow().then(async workflowId => {
+            // for each job, insert the scripts and update script id, then insert job
+            for (const job of jobs) {
+                const script = job.script;
+                if (script == null) {
+                    console.error('null script for job: ');
+                    console.error(job);
+                    continue;
+                }
+                console.log(script);
+                await createScript({ entry_point: script?.entry_point, arguments: script?.arguments, content: script?.content })
+                    .then(id => { if (job.script == null) { return; } job.script.id = id; })
+                    .then(async () => {
+                        if (job.script == null) return;
+                        await createJob({
+                            script_id: job.script!.id,
+                            engine_id: job.engine_id,
+                            workflow_id: workflowId,
+                        }).then(id => job.id = id);
+                    });
             }
-            console.log(script);
-            await createScript({ entry_point: script?.entry_point, arguments: script?.arguments, content: script?.content })
-                .then(id => { if (job.script == null) { return; } job.script.id = id; })
-                .then(() => {
-                    if (job.script == null) return;
-                    createJob({
-                        script_id: job.script!.id,
-                        engine_id: job.engine_id,
-                        workflow_id: workflowId,
-                    }).then(id => job.id = id);
-                });
+
+            const blockingJob = new Set<string>();
+
+            // Link jobs for each line and increase count
+            lines.forEach((line) => {
+                console.log(line);
+                connectJobs({ from_id: line.from.id, to_id: line.to.id });
+                blockingJob.add(line.to.id);
+            })
+
+            // set status of all jobs to runnable after setting up next jobs
+            jobs.forEach((job) => {
+                if (blockingJob.has(job.id)) {
+                    return;
+                }
+                console.log(job.id);
+                enableJob({ id: job.id });
+            });
+
+            console.log(jobs);
         });
-
-        // Link jobs for each line and increase count
-        lines.forEach((line) => {
-            console.log(line);
-            connectJobs({ from_id: line.from.id, to_id: line.to.id });
-        })
-
-        // set status of all jobs to runnable after setting up next jobs
-        jobs.forEach((job) => enableJob({ id: job.id }));
-
-        await runWorkflow({ id: workflowId });
-        // TODO disable UI etc
     }
 
     return (
@@ -207,7 +212,7 @@ function WorkflowPage() {
                 <DialogContent>
                     <Select onChange={(event) => setSelectedEngine(event.target.value)}>
                         {useQuery(api.engine.get)?.map(object => (
-                            <MenuItem value={object._id} key={object._id}>
+                            <MenuItem value={object.name} key={object._id}>
                                 {object.name}
                             </MenuItem>
                         ))}
