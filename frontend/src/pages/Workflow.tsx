@@ -58,8 +58,6 @@ function WorkflowPage() {
     const [isPolling, setIsPolling] = useState(false);
     const [currentScriptId, setCurrentScriptId] = useState<any>("");    // for getting outputs
 
-    // TODO ensure only create one workflow
-    var workflowId: any = '';
     const createWorkflow = useMutation(api.workflow.createWorkflow);
     createWorkflow().then(id => { workflowId = id; });
 
@@ -142,7 +140,7 @@ function WorkflowPage() {
     }
     const onExecute = async () => {
         // for each job, insert the scripts and update script id, then insert job
-        await jobs.forEach(async (job) => {
+        jobs.forEach(async (job) => {
             const script = job.script;
             if (script == null) {
                 console.error('null script for job: ');
@@ -152,7 +150,7 @@ function WorkflowPage() {
             console.log(script);
             await createScript({ entry_point: script?.entry_point, arguments: script?.arguments, content: script?.content })
                 .then(id => { if (job.script == null) { return; } job.script.id = id; })
-                .then(async () => {
+                .then(() => {
                     if (job.script == null) return;
                     createJob({
                         script_id: job.script!.id,
@@ -162,42 +160,24 @@ function WorkflowPage() {
                 });
         });
 
-        // Link jobs for each line and increase count
-        lines.forEach((line) => {
-            console.log(line);
-            connectJobs({ from_id: line.from.id, to_id: line.to.id });
-        })
+            // Link jobs for each line and increase count
+            lines.forEach((line) => {
+                console.log(line);
+                connectJobs({ from_id: line.from.id, to_id: line.to.id });
+                blockingJob.add(line.to.id);
+            })
 
-        // set status of all jobs to runnable after setting up next jobs
-        jobs.forEach((job) => enableJob({ id: job.id }));
+            // set status of all jobs to runnable after setting up next jobs
+            jobs.forEach((job) => {
+                if (blockingJob.has(job.id)) {
+                    return;
+                }
+                console.log(job.id);
+                enableJob({ id: job.id });
+            });
 
         await runWorkflow({ id: workflowId });
         // TODO disable UI etc
-
-        // change all job component content to loading bar
-        jobs.forEach((job) => {
-            job.component_content = <BarLoader />;
-        })
-        setJobs(jobs);
-
-        // repeatedly check all unfinished jobs for output
-        setIsPolling(true);
-        // setInterval(() => {
-        //     jobs.forEach((job) => {
-        //         console.log(job);
-        //         if (job.script == null) return;
-        //         console.log("job script not empty");
-        //         setCurrentScriptId(job.script.id);
-        //         console.log(job.script.id + " " + output);
-        //         if (output == null) return;
-        //         job.script.output = output;
-        //         job.component_content = <div>{output}</div>
-        //         job.completed = true;
-        //         setJobs(jobs);
-        //     })
-        // }, 3000);
-
-        // TODO do only for final job (try)
     }
 
     return (
@@ -246,7 +226,7 @@ function WorkflowPage() {
                 <DialogContent>
                     <Select onChange={(event) => setSelectedEngine(event.target.value)}>
                         {useQuery(api.engine.get)?.map(object => (
-                            <MenuItem value={object._id} key={object._id}>
+                            <MenuItem value={object.name} key={object._id}>
                                 {object.name}
                             </MenuItem>
                         ))}

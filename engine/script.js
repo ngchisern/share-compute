@@ -25,10 +25,13 @@ const unsubscribe = client.onUpdate(
     }
 
     running = true;
+    console.log("Running job: ", job._id);
     await run_job(client, job);
     running = false;
   }
 );
+
+console.log("Engine running...");
 
 process.on("SIGINT", async () => {
   await deregister(httpClient, engine_id);
